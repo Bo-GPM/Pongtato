@@ -1,3 +1,6 @@
+# Pongtato
+
+# Global Variables
 gameState=0
 TITLE_STATE=0
 PLAY_STATE=1
@@ -9,6 +12,7 @@ INITIAL_BALL_SIZE = 60
 BALL_IMPACT_DECAY = 0.95
 BALL_SIZE_DECAY = -0.02
 
+# Variables here would need to reset after a match
 playerExp = 0
 playerLevel = 1
 expToNextLevel = 2
@@ -30,6 +34,7 @@ paddlePosY=0
 paddleWidth=120
 paddleHeight=20
 
+# Possible Upgrade List
 upgradeList = ["Ball Size increase", 
              "Paddle Width increase", 
              "Ball Penetration Power + 1", 
@@ -38,6 +43,7 @@ upgradeList = ["Ball Size increase",
 
 currentStoreList = []
 
+#____________Main Functions___________#
 def setup():
     global paddlePosX,paddlePosY,paddleWidth,paddleHeight
     size(960,480)
@@ -54,7 +60,9 @@ def draw():
         drawGameOverScreen()
     elif gameState == STORE_PAGE:
         drawStorePage()
-        
+
+#__________Sub Draw Functions___________#
+
 def drawTitleScreen():
     textSize(64)
     textAlign(CENTER)
@@ -71,33 +79,13 @@ def drawTitleScreen():
     
 def drawPlayScreen():
     updatePaddle()
-    enemySpawnLogic()
+    enemySpawnController()
     resetBallCollision()
     UpdatePlayerBalls()
     UpdateEnemyBalls()
     updatePlayerExp()
     updateAutoReplenish()
     drawUI()
-
-def updatePaddle():
-    global paddlePosY,paddlePosX 
-    paddlePosX=mouseX
-    paddlePosY=height
-    rectMode(CENTER)
-    fill(255)
-    rect(paddlePosX,paddlePosY,paddleWidth,paddleHeight)
-    
-def enemySpawnLogic():
-    global enemyHP, SpawnedEnemies
-    if SpawnedEnemies / 10 > enemyHP:
-        enemyHP += 1
-    if frameCount % enemyRespawnInterval == 0:            
-        startPos=PVector(random(0,width), 30)
-        tempVel=PVector(random(0,1), random(0,2))
-        tempColor=color(random(120, 255), random(120, 255), random(120, 255))
-        newEnemyBall=EnemyBall(startPos,tempVel,INITIAL_BALL_SIZE,tempColor,enemyHP)
-        enemyBallList.append(newEnemyBall)
-        SpawnedEnemies += 1
         
 def drawGameOverScreen():
     global objects
@@ -120,7 +108,28 @@ def drawStorePage():
             gameState = PLAY_STATE
         else:
             pass
-        
+
+#______________Helper Functions____________#
+def updatePaddle():
+    global paddlePosY,paddlePosX 
+    paddlePosX=mouseX
+    paddlePosY=height
+    rectMode(CENTER)
+    fill(255)
+    rect(paddlePosX,paddlePosY,paddleWidth,paddleHeight)
+    
+def enemySpawnController():
+    global enemyHP, SpawnedEnemies
+    if SpawnedEnemies / 10 > enemyHP:
+        enemyHP += 1
+    if frameCount % enemyRespawnInterval == 0:            
+        startPos=PVector(random(0,width), 30)
+        tempVel=PVector(random(0,1), random(0,2))
+        tempColor=color(random(120, 255), random(120, 255), random(120, 255))
+        newEnemyBall=EnemyBall(startPos,tempVel,INITIAL_BALL_SIZE,tempColor,enemyHP)
+        enemyBallList.append(newEnemyBall)
+        SpawnedEnemies += 1        
+
 def applyUpgrade(upgradeNum):
     global playerBallSize, paddleWidth, playerBallPenPower, enemyRespawnInterval, playerBallStock
     if upgradeNum == 0:
@@ -198,7 +207,6 @@ def updateAutoReplenish():
     else:
         remainReplenishInterval -= 1
     
-        
 def storeSetup():
     global currentStoreList, mouseClickPasser
     mouseClickPasser = False
@@ -207,7 +215,7 @@ def storeSetup():
         # TODO: check repetition of elements
         tempInt = int(random(0, len(upgradeList)))
         currentStoreList.append(tempInt)
-        
+
 def resetGameConst():
     global currentScore, remainReplenishInterval, ballReplenishInterval, playerExp, playerLevel, expToNextLevel, enemyHP, SpawnedEnemies, playerBallSize, playerBallPenPower, playerBallStock, enemyRespawnInterval, paddleWidth
     playerExp = 0
@@ -253,6 +261,32 @@ def resetBallCollision():
     for playerBall in playerBallList:
         playerBall.collidedThisFrame = False
         
+def buttonCreation(posX, posY, sizeX, sizeY, tempText):
+    global mouseClickPasser
+    rectMode(CORNER)
+    textAlign(CENTER,CENTER)
+    if (mouseX < posX + sizeX) and (mouseX > posX) and (mouseY < posY + sizeY) and (mouseY > posY):
+        fill(200, 200, 250)
+        rect(posX, posY, sizeX, sizeY)
+        fill(40)
+        textSize(30)
+        text(tempText, posX + 0.5 * sizeX, posY + 0.5 * sizeY)
+        if mouseClickPasser:
+            mouseClickPasser = False
+            return True
+    else:
+        fill(100, 100, 130)
+        rect(posX, posY, sizeX, sizeY)
+        fill(250)
+        textSize(20)
+        text(tempText, posX + 0.5 * sizeX, posY + 0.5 * sizeY)
+    return False
+
+def mouseClicked():
+    global mouseClickPasser
+    mouseClickPasser = True
+
+#______________Render UIs_____________#
 def drawUI():
     drawExpBar()
     drawRemainingBalls()
@@ -296,32 +330,8 @@ def drawScore():
     textSize(30)
     fill(255)
     text("Score: " + str(currentScore), width - 100, 30)
-    
-def buttonCreation(posX, posY, sizeX, sizeY, tempText):
-    global mouseClickPasser
-    rectMode(CORNER)
-    textAlign(CENTER,CENTER)
-    if (mouseX < posX + sizeX) and (mouseX > posX) and (mouseY < posY + sizeY) and (mouseY > posY):
-        fill(200, 200, 250)
-        rect(posX, posY, sizeX, sizeY)
-        fill(40)
-        textSize(30)
-        text(tempText, posX + 0.5 * sizeX, posY + 0.5 * sizeY)
-        if mouseClickPasser:
-            mouseClickPasser = False
-            return True
-    else:
-        fill(100, 100, 130)
-        rect(posX, posY, sizeX, sizeY)
-        fill(250)
-        textSize(20)
-        text(tempText, posX + 0.5 * sizeX, posY + 0.5 * sizeY)
-    return False
 
-def mouseClicked():
-    global mouseClickPasser
-    mouseClickPasser = True
-
+#__________EnemyBall Class_________#
 class EnemyBall:
     def __init__(self,tempPos,tempVel,tempSize,tempColor,enemyHP):
         self.pos=tempPos
@@ -356,14 +366,11 @@ class EnemyBall:
             playerExp += 1
             currentScore += enemyHP * 1000
             
-            
     def render(self):
         pushStyle()
         fill(0,0,0,0)
         stroke(self.col, 255 * self.rad/float(INITIAL_BALL_SIZE))
-
         ellipse(self.pos.x, self.pos.y, self.rad, self.rad)
-   
         fill(self.col)
         text(self.enemyHP,self.pos.x,self.pos.y)
         popStyle()
@@ -373,7 +380,7 @@ class EnemyBall:
             if self.pos.y + self.rad / 2 >paddlePosY - paddleHeight / 2 and self.pos.y + self.rad / 2< paddlePosY + paddleHeight / 2:
                 return True
             return False
-
+#_________Player Ball__________#
 class PlayerBall(EnemyBall):
     def update(self):
         self.pos += self.vel #/10.0        
