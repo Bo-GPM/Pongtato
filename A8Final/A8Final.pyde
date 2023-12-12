@@ -1,4 +1,4 @@
-# Pongtato
+# Pongtato, imge credits goes to LORA model!
 
 # Global Variables
 gameState=0
@@ -32,7 +32,7 @@ playerBallList=[]
 paddlePosX=0
 paddlePosY=0
 paddleWidth=120
-paddleHeight=20
+paddleHeight=40
 
 # Possible Upgrade List
 upgradeList = ["Ball Size increase", 
@@ -42,13 +42,15 @@ upgradeList = ["Ball Size increase",
              "Enemies Refresh Frequency Decrease"]
 
 currentStoreList = []
+titleImg = None
 
 #____________Main Functions___________#
 def setup():
-    global paddlePosX,paddlePosY,paddleWidth,paddleHeight
+    global paddlePosX,paddlePosY,paddleWidth,paddleHeight, titleImg
     size(960,480)
     background(0)
     textSize(32)
+    titleImg = loadImage("title.png")
 
 def draw():
     background(0)
@@ -64,18 +66,30 @@ def draw():
 #__________Sub Draw Functions___________#
 
 def drawTitleScreen():
-    textSize(64)
-    textAlign(CENTER)
-    text("Pongtato",width/2,height/2)
-
+    # textSize(64)
+    # textAlign(CENTER)
+    # text("Pongtato",width/2,height/2)
     # textSize(32)
     # textAlign(LEFT)
     # text("Today's Date:"+str(month())+"-"+str(day())+"-"+str(year()),20,40)
     # textAlign(RIGHT)
     # text(str(hour())+":"+nf(minute(),2)+":"+nf(second(),2),width-20,40)
     # textAlign(CENTER)
+    
+    # Load title Image
+    imageMode(CENTER)
+    image(titleImg, width / 2, height / 2 - 50, 400, 400)
     textSize(30)
-    text("Press P to Start",width/2,height*2/3)
+    textAlign(RIGHT, BOTTOM)
+    text("Press P to Start",width - 20,height - 30)
+    textSize(20)
+    textAlign(LEFT)
+    tempY = 30
+    tempX = 40
+    text("Tutorial:", 100 - tempX, 350 + tempY)
+    text("1. Press SpaceBar to fire the ball.", 120 - tempX, 375 + tempY)
+    text("2. Avoid incoming empty balls, Catch soild ball.", 120 - tempX, 400 + tempY)
+    text("3. Make sure to pick up the right upgrade!", 120 - tempX, 425 + tempY)
     
 def drawPlayScreen():
     updatePaddle()
@@ -130,8 +144,10 @@ def enemySpawnController():
         enemyBallList.append(newEnemyBall)
         SpawnedEnemies += 1        
 
+# Apply upgrade to current game
 def applyUpgrade(upgradeNum):
     global playerBallSize, paddleWidth, playerBallPenPower, enemyRespawnInterval, playerBallStock
+    # Number corrdinate to "upgradeList" order
     if upgradeNum == 0:
         playerBallSize += 20
     elif upgradeNum == 1:
@@ -147,6 +163,7 @@ def applyUpgrade(upgradeNum):
 
 def keyPressed():
     global gameState,startTime
+    # gameState change
     if key =="p" or key=="P":
         if gameState==TITLE_STATE:
             gameState=PLAY_STATE
@@ -157,6 +174,7 @@ def keyPressed():
             gameState=TITLE_STATE
             resetGameConst()
             
+    # Fire the ball
     if key==" ":
         global playerBallStock
         if playerBallStock >= 1:
@@ -168,7 +186,7 @@ def keyPressed():
             newPlayerBall=PlayerBall(startPos,tempVel, playerBallSize, tempColor,1)       
             playerBallList.append(newPlayerBall)
             playerBallStock -= 1 
-        
+# Update EnemyBall Behavior and attributes
 def UpdateEnemyBalls():
     global gameState,enemyBallList,playerBallList
     for ball in enemyBallList:
@@ -180,14 +198,16 @@ def UpdateEnemyBalls():
             enemyBallList=[]
             playerBallList=[]
             gameState=GAME_OVER_STATE
-            
+
+# Update Player ball behavior and attributes
 def UpdatePlayerBalls():
     for playerBall in playerBallList:
         playerBall.EnemyCollision()
         playerBall.update()    
         playerBall.render()
         playerBall.collision(paddlePosX,paddlePosY,paddleWidth,paddleHeight)
-            
+
+# Update Player Exp, also some of the caculation happened in Player class (Though it is not great to do that there)
 def updatePlayerExp():
     global playerExp, playerLevel, expToNextLevel, expIncrement, gameState, playerBallStock
     if playerExp >= expToNextLevel:
@@ -199,6 +219,7 @@ def updatePlayerExp():
         playerBallStock += 1
         storeSetup()
 
+# Ball Auto-replenish Function
 def updateAutoReplenish():
     global ballReplenishInterval, playerBallStock, remainReplenishInterval
     if remainReplenishInterval <= 0:
@@ -206,7 +227,8 @@ def updateAutoReplenish():
         remainReplenishInterval = ballReplenishInterval
     else:
         remainReplenishInterval -= 1
-    
+
+# Only call once before everytime player open store
 def storeSetup():
     global currentStoreList, mouseClickPasser
     mouseClickPasser = False
@@ -216,6 +238,7 @@ def storeSetup():
         tempInt = int(random(0, len(upgradeList)))
         currentStoreList.append(tempInt)
 
+# Reset game's constants
 def resetGameConst():
     global currentScore, remainReplenishInterval, ballReplenishInterval, playerExp, playerLevel, expToNextLevel, enemyHP, SpawnedEnemies, playerBallSize, playerBallPenPower, playerBallStock, enemyRespawnInterval, paddleWidth
     playerExp = 0
@@ -232,6 +255,7 @@ def resetGameConst():
     paddleWidth=120
     currentScore = 0
 
+# Collision detect
 def offScreen(vector, rad):
     rad /= 2
     if vector.x - rad < 0:
@@ -244,6 +268,7 @@ def offScreen(vector, rad):
         return 4 # W
     return 0    
 
+# reflect 2 balls while collide
 def reflect(ball1, ball2):
     normal = PVector.sub(ball1.pos, ball2.pos)
     normal.normalize()
@@ -254,13 +279,15 @@ def reflect(ball1, ball2):
     normal = PVector.mult(normal, -1)
     dot2 = 2 * ball2.vel.dot(normal)
     ball2.vel.sub(PVector.mult(normal, dot2))
-    
+
+# Reset Collision
 def resetBallCollision():
     for enemyBall in enemyBallList:
         enemyBall.collidedThisFrame = False
     for playerBall in playerBallList:
         playerBall.collidedThisFrame = False
-        
+
+# Reuse previous buttonCreation function for store page
 def buttonCreation(posX, posY, sizeX, sizeY, tempText):
     global mouseClickPasser
     rectMode(CORNER)
@@ -282,6 +309,7 @@ def buttonCreation(posX, posY, sizeX, sizeY, tempText):
         text(tempText, posX + 0.5 * sizeX, posY + 0.5 * sizeY)
     return False
 
+# ButtonCreation helper function
 def mouseClicked():
     global mouseClickPasser
     mouseClickPasser = True
@@ -344,7 +372,7 @@ class EnemyBall:
     def update(self):
         global playerExp, currentScore
         self.pos+= self.vel         
-
+        # Collision
         whichWall = offScreen(self.pos, self.rad)
         if whichWall > 0:    
             self.rad *= BALL_IMPACT_DECAY
@@ -352,15 +380,17 @@ class EnemyBall:
                 self.vel.rotate(PI - 2*self.vel.heading())
             else:
                 self.vel.rotate(-2 * self.vel.heading())
-                
+        # Self Decay
         if self.rad > 0:
             if self.rad > INITIAL_BALL_SIZE/4:
                 self.rad += BALL_SIZE_DECAY
             else:
                 self.rad += BALL_SIZE_DECAY * 10
+        # HP control
         if self.colliedThisFrame==True:
                 self.enemyHP-=1
                 self.colliedThisFrame=False
+        # Remove
         if self.enemyHP <= 0:
             enemyBallList.remove(self)
             playerExp += 1
@@ -374,22 +404,39 @@ class EnemyBall:
         fill(self.col)
         text(self.enemyHP,self.pos.x,self.pos.y)
         popStyle()
-
+    
+    # Collide with 4 walls
     def collision(self,paddlePosX,paddlePosY,paddleWidth,paddleHeight):
         if self.pos.x> paddlePosX-paddleWidth/2 and self.pos.x<paddlePosX+paddleWidth/2:
             if self.pos.y + self.rad / 2 >paddlePosY - paddleHeight / 2 and self.pos.y + self.rad / 2< paddlePosY + paddleHeight / 2:
                 return True
             return False
-#_________Player Ball__________#
+        
+#_________PlayerBall Class__________#
 class PlayerBall(EnemyBall):
     def update(self):
+        # Collision, but only collide with up, left, right walls
         self.pos += self.vel #/10.0        
         whichWall = offScreen(self.pos, self.rad)
         if whichWall > 0:     
-            if whichWall == 1 or whichWall == 3:
-                self.vel.rotate(PI - 2*self.vel.heading())
+            if whichWall == 1:
+                # Ensure ball won't struck on the left edge
+                if self.vel.x < 0:
+                    self.vel.rotate(PI - 2*self.vel.heading())
+                else:
+                    pass
+            elif whichWall == 3:
+                # Ensure ball won't struck on the right edge
+                if self.vel.x > 0:
+                    self.vel.rotate(PI - 2*self.vel.heading())
+                else:
+                    pass
             elif whichWall == 4:
-                self.vel.rotate(-2*self.vel.heading())
+                # Ensure ball won't struck on the top edge
+                if self.vel.y < 0:
+                    self.vel.rotate(-2*self.vel.heading())
+                else:
+                    pass
             else:
                 playerBallList.remove(self)
                    
@@ -398,14 +445,16 @@ class PlayerBall(EnemyBall):
         fill(255)
         circle(self.pos.x, self.pos.y, self.rad)    
         fill(self.col)
-        text(self.enemyHP,self.pos.x,self.pos.y)
+        #text(self.enemyHP,self.pos.x,self.pos.y)
         popStyle()
-        
+    
+    # Very simple window border collision
     def collision(self,paddlePosX,paddlePosY,paddleWidth,paddleHeight):
         if self.pos.x>paddlePosX-paddleWidth/2 - self.rad / 3 and self.pos.x<paddlePosX+paddleWidth/2 + self.rad / 3:
             if self.pos.y + self.rad / 2 >paddlePosY - paddleHeight / 2 and self.pos.y + self.rad / 2< paddlePosY + paddleHeight / 2:
                 self.vel.rotate(-2 * self.vel.heading())
-                
+    
+    # Enemyball collision detection (This won't function correctly if playerball is tangent to enemyball, it will lock to the edge of enemyball)
     def EnemyCollision(self): 
         for enemyball in enemyBallList:
             for playerball in playerBallList:
